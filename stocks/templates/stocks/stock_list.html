@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株価監視ツール</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; background: #f4f6f9; font-size: 14px; }
+        header { background: #343a40; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .controls { padding: 10px; background: #fff; border-bottom: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; }
+        .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+        .btn { padding: 6px 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; }
+        .btn-secondary { background: #6c757d; }
+        
+        /* テーブルのスクロールと固定設定 */
+        .table-container { max-height: 70vh; overflow: auto; position: relative; margin-top: 5px; }
+        table { border-collapse: collapse; width: 100%; white-space: nowrap; background: #fff; }
+        th, td { padding: 8px 12px; border: 1px solid #dee2e6; }
+        
+        /* 列方向の固定（コード・銘柄名） */
+        th, td { position: sticky; background: #fff; }
+        th:nth-child(1), td:nth-child(1) { left: 0; z-index: 2; width: 60px; }
+        th:nth-child(2), td:nth-child(2) { left: 60px; z-index: 2; min-width: 120px; }
+        th { top: 0; z-index: 3; background: #e9ecef; }
+        th:nth-child(1), th:nth-child(2) { z-index: 4; }
+
+        tr.selected { background-color: #cfe2ff !important; }
+        tr.selected td { background-color: #cfe2ff !important; }
+        
+        .action-bar { background: #212529; color: #fff; padding: 10px; display: none; position: fixed; bottom: 0; left: 0; right: 0; justify-content: space-around; align-items: center; z-index: 1000; }
+        .action-bar.active { display: flex; }
+
+        /* スコア表示 */
+        .score-high { background-color: #c8e6c9; font-weight: bold; } /* 1300以上 */
+        .score-mid  { background-color: #fff9c4; }                    /* 900以上 */
+        .score-low  { background-color: #ffffff; }                    /* 0以上 */
+    </style>
+</head>
+<body>
+
+<header>
+    <span>[≡] 株価監視ツール</span>
+    <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+        {% csrf_token %}
+        <button type="submit" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 14px; text-decoration: underline; padding: 0;">ログアウト</button>
+    </form>
+</header>
+
+<div class="controls">
+    <div>最終更新(16:00)</div>
+    <div class="btn-group">
+        <a href="{% url 'stock_create' %}" class="btn">[ ➕ 新規登録 ]</a>
+        <a href="{% url 'score_settings' %}" class="btn">[ ⚙️ 設定 ]</a>
+    </div>
+    <div class="btn-group">
+        <span>ソート:</span>
+        <!-- コード順ボタン -->
+        <a href="?sort=code&order={% if current_sort == 'code' %}{{ next_order }}{% else %}asc{% endif %}" 
+        class="btn btn-secondary btn-sm {% if current_sort == 'code' %}active-sort{% endif %}">
+            コード順 {% if current_sort == 'code' %}{% if current_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+        </a>
+
+        <!-- 利回り順ボタン -->
+        <a href="?sort=yield&order={% if current_sort == 'yield' %}{{ next_order }}{% else %}desc{% endif %}" 
+        class="btn btn-secondary btn-sm {% if current_sort == 'yield' %}active-sort{% endif %}">
+            利回り順 {% if current_sort == 'yield' %}{% if current_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+        </a>
+
+        <!-- BB順ボタン -->
+        <a href="?sort=bb&order={% if current_sort == 'bb' %}{{ next_order }}{% else %}asc{% endif %}" 
+        class="btn btn-secondary btn-sm {% if current_sort == 'bb' %}active-sort{% endif %}">
+            BB順 {% if current_sort == 'bb' %}{% if current_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+        </a>
+</div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>コード</th>
+                <th>銘柄名</th>
+                <th>ポジション</th>
+                <th>ファンダ</th> <!-- 旧判定 -->
+                <th>現在株価</th>
+                <th>BB</th>
+                <th>σ</th>
+                <th>利回(%)</th>
+                <th>連続増配</th>
+                <th>業績推移</th>
+                <th>配当性向</th>
+                <th>配当政策</th>
+                <th>配当金額</th>
+                <th>目標株価</th>
+                <th>評価指数</th>
+                <th>優待</th>
+                <th>権利月</th>
+                <th>メモ</th>
+                <th>更新日</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in stocks %}
+            <tr onclick="selectRow(this, '{{ stock.code }}')">
+                <td>{{ stock.code }}</td>
+                <td>{{ stock.name }}</td>
+                <td>{{ stock.position }}</td>
+                <td class="{{ stock.score_class }}">{{ stock.judgement }}</td> <!-- ファンダ 旧判定 -->
+                <td>{{ stock.current_price|default:"-" }}</td> <!-- 現在価格 -->
+                <td>{{ stock.bollinger_band_position|default:"-" }}</td> <!-- ボリンジャーバンド位置 -->
+                <td>{{ stock.bollinger_band_sigma|default:"-" }}</td> <!-- σ値 -->
+                <td>{{ stock.dividend_yield|default:"-" }}</td> <!-- 利回り-->
+                <td>{{ stock.consecutive_dividend_increases|default:"-" }}</td> <!-- 連続増配 -->
+                <td>{{ stock.business_performance|default:"-" }}</td> <!-- 業績推移 -->
+                <td>{{ stock.dividend_payout_ratio|default:"-" }}</td> <!-- 配当性向 -->
+                <td>{{ stock.dividend_policy|default:"-" }}</td> <!-- 配当政策 -->
+                <td>{{ stock.dividend_amount|default:"-" }}</td> <!-- 配当金額 -->
+                <td>{{ stock.target_price|default:"-" }}</td> <!-- 目標価格 -->
+                <td class="{{ stock.score_class }}">{{ stock.evaluation_score|default:"-" }}</td> <!-- （ファンダメンタルズ）評価値 -->
+                <td>{{ stock.yuutai|default:"-" }}</td> <!-- 優待 -->
+                <td>{{ stock.kenri_tsuki|default:"-" }}</td> <!-- 権利月 -->
+                <td>{{ stock.memo|default:"-" }}</td> <!-- メモ -->
+                <td>{{ stock.updated_at|date:"Y/m/d H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- 行選択時のアクションバー -->
+<div id="actionBar" class="action-bar">
+    <span id="selectedCodeText">選択中: なし</span>
+    <div>
+        <button id="updateBtn" class="btn" style="background: #28a745; padding-left: 24px; padding-right: 24px;"> 更新 </button>
+        <a id="yahooLink" href="#" target="_blank" class="btn btn-primary">YahooFinance</a>
+        <a id="ManexLink" href="#" target="_blank" class="btn" style="color: #000000; background: #dfdc2b;">銘柄スカウター</a>
+        <button id="editBtn" class="btn" style="background: #ce6b31; padding-left: 24px; padding-right: 24px;"> 編集 </button>
+        <button id="deleteBtn" class="btn" style="background: #FF0000;">削除</button>
+    </div>
+</div>
+<script>
+    let selectedStockCode = null;
+
+    function selectRow(row, code) {
+        document.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected'));
+        row.classList.add('selected');
+        selectedStockCode = code;
+        
+        document.getElementById('selectedCodeText').innerText = '選択中: ' + code;
+        document.getElementById('yahooLink').href = 'https://finance.yahoo.co.jp/quote/' + code;
+        document.getElementById('ManexLink').href = 'https://monex.ifis.co.jp/index.php?sa=report_dps&bcode=' + code;
+        document.getElementById('actionBar').classList.add('active');
+    }
+
+    // 編集ボタンの処理
+    document.getElementById('editBtn').addEventListener('click', function() {
+        if (!selectedStockCode) {
+            alert('銘柄を選択してください。');
+            return;
+        }
+        window.location.href = '/edit/' + selectedStockCode + '/';
+    });
+
+    // 更新ボタンの処理
+    document.getElementById('updateBtn').addEventListener('click', function() {
+        if (!selectedStockCode) {
+            alert('更新する銘柄を選択してください。');
+            return;
+        }
+        window.location.href = '/update/' + selectedStockCode + '/';
+    });
+
+    // 削除ボタンがクリックされたときの処理（確認ダイアログ付き）
+    document.getElementById('deleteBtn').addEventListener('click', function() {
+        if (!selectedStockCode) {
+            alert('削除する銘柄を選択してください。');
+            return;
+        }
+        
+        // 削除の確認ダイアログを表示
+        if (confirm('銘柄「' + selectedStockCode + '」を本当に削除しますか？\n（関連する価格履歴も削除されます）')) {
+            window.location.href = '/delete/' + selectedStockCode + '/';
+        }
+    });
+</script>
+</body>
+</html>

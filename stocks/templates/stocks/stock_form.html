@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if stock %}銘柄編集{% else %}銘柄新規登録{% endif %} - 株価監視ツール</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #333; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        textarea { resize: vertical; height: 80px; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
+        .btn-submit { width: 100%; padding: 12px; background: #28a745; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-submit:hover { background: #218838; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+{% if messages %}
+    <div class="messages" style="margin-bottom: 16px;">
+        {% for message in messages %}
+            <div style="padding: 10px 14px; border-radius: 6px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<div class="container">
+    <h2>{% if stock %}銘柄編集{% else %}銘柄新規登録{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="code">銘柄コード</label>
+            <!-- 編集時はコードを変更不可にする -->
+            <input type="text" id="code" name="code" value="{{ stock.code|default:'' }}" {% if stock %}readonly{% else %}required{% endif %} placeholder="例: 7203.T">
+        </div>
+
+        <div class="form-group">
+            <label for="name">銘柄名</label>
+            <input type="text" id="name" name="name" value="{{ stock.name|default:'' }}" placeholder="例: トヨタ自動車">
+        </div>
+
+
+<div class="form-group">
+    <label>ポジション</label>
+    <div class="checkbox-group">
+        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+            <input type="checkbox" name="position" value="NISA" {% if "NISA" in stock.position %}checked{% endif %}>
+            <span>NISA</span>
+        </label>
+        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+            <input type="checkbox" name="position" value="松井" {% if "松井" in stock.position %}checked{% endif %}>
+            <span>松井</span>
+        </label>
+        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+            <input type="checkbox" name="position" value="SBI" {% if "SBI" in stock.position %}checked{% endif %}>
+            <span>SBI</span>
+        </label>
+        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+            <input type="checkbox" name="position" value="マネックス" {% if "マネックス" in stock.position %}checked{% endif %}>
+            <span>マネックス</span>
+        </label>
+        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+            <input type="checkbox" name="position" value="その他" {% if "その他" in stock.position %}checked{% endif %}>
+            <span>その他</span>
+        </label>
+    </div>
+</div>
+
+
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="dividend_amount">1株年間配当 (円)</label>
+                <input type="number" step="0.01" id="dividend_amount" name="dividend_amount" value="{{ stock.dividend_amount|default:'' }}" placeholder="例: 50.0">
+            </div>
+            <div class="form-group">
+                <label for="target_price">目標株価 (円)</label>
+                <input type="number" step="0.01" id="target_price" name="target_price" value="{{ stock.target_price|default:'' }}" placeholder="例: 2000">
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <!-- 追加した定性項目群 -->
+        <!-- 定性項目群 -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="consecutive_dividend_increases">連続増配</label>
+                <select id="consecutive_dividend_increases" name="consecutive_dividend_increases">
+                    <option value="-" {% if stock.consecutive_dividend_increases == "-" or not stock and not stock.consecutive_dividend_increases %}selected{% endif %}>-</option>
+                    <option value="〇" {% if stock.consecutive_dividend_increases == "〇" %}selected{% endif %}>〇</option>
+                    <option value="△" {% if stock.consecutive_dividend_increases == "△" %}selected{% endif %}>△</option>
+                    <option value="×" {% if stock.consecutive_dividend_increases == "×" %}selected{% endif %}>×</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="business_performance">業績推移</label>
+                <select id="business_performance" name="business_performance">
+                    <option value="-" {% if stock.business_performance == "-" or not stock and not stock.business_performance %}selected{% endif %}>-</option>
+                    <option value="〇" {% if stock.business_performance == "〇" %}selected{% endif %}>〇</option>
+                    <option value="△" {% if stock.business_performance == "△" %}selected{% endif %}>△</option>
+                    <option value="×" {% if stock.business_performance == "×" %}selected{% endif %}>×</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="dividend_payout_ratio">配当性向 (%)</label>
+                <input type="number" id="dividend_payout_ratio" name="dividend_payout_ratio" value="{{ stock.dividend_payout_ratio|default:'' }}" placeholder="例: 35">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="dividend_policy">配当政策</label>
+            <select id="dividend_policy" name="dividend_policy">
+                <option value="-" {% if stock.dividend_policy == "-" or not stock and not stock.dividend_policy %}selected{% endif %}>-</option>
+                <option value="〇増配" {% if stock.dividend_policy == "〇増配" %}selected{% endif %}>〇増配</option>
+                <option value="△非減配" {% if stock.dividend_policy == "△非減配" %}selected{% endif %}>△非減配</option>
+                <option value="×その他" {% if stock.dividend_policy == "×その他" %}selected{% endif %}>×その他</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="yuutai">優待情報</label>
+            <textarea id="yuutai" name="yuutai" placeholder="例: 100株以上でクオカード1,000円分（3月末）">{{ stock.yuutai|default:'' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>権利月（複数選択可）</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 5px; background: #f8f9fa; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                {% for m in months %}
+                <label style="font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                    <input type="checkbox" name="kenri_tsuki" value="{{ m }}" {% if m|stringformat:"s" in selected_months %}checked{% endif %}>
+                    {{ m }}月
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="memo">メモ</label>
+            <textarea id="memo" name="memo" placeholder="自由なメモを入力">{{ stock.memo|default:'' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">{% if stock %}更新する{% else %}登録して価格を取得{% endif %}</button>
+    </form>
+
+    <a href="{% url 'stock_list' %}" class="back-link">一覧に戻る</a>
+</div>
+
+</body>
+</html>

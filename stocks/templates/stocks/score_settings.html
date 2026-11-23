@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スコア計算・色分け設定</title>
+    <style>
+        body { font-family: sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; }
+        h1 { font-size: 1.4rem; border-bottom: 2px solid #333; padding-bottom: 6px; }
+        h2 { font-size: 1.1rem; margin-top: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+        th { background-color: #f5f5f5; width: 45%; }
+        input[type="number"] { width: 120px; padding: 4px 6px; font-size: 1rem; }
+        .formula-box { background: #f8f9fa; border: 1px solid #ddd; padding: 10px 12px; border-radius: 4px; font-size: 0.9rem; }
+        .actions { margin-top: 24px; display: flex; gap: 12px; align-items: center; }
+        .btn-primary { background: #1976d2; color: #fff; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        .btn-secondary { text-decoration: none; color: #333; padding: 9px 16px; border: 1px solid #ccc; border-radius: 4px; }
+        .msg { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; padding: 10px; border-radius: 4px; margin-bottom: 16px; }
+        .badge-high { background: #c8e6c9; padding: 2px 8px; border-radius: 4px; }
+        .badge-mid  { background: #fff9c4; padding: 2px 8px; border-radius: 4px; }
+        .badge-low  { background: #f5f5f5; padding: 2px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>スコア計算・判定色分け設定</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="msg">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="formula-box">
+        <strong>計算式：</strong> 利回り<sup>2</sup> × 連続増配 × 業績推移 × max(100 - 配当性向, 0) + 配当政策
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <h2>1. 各指標の変換係数</h2>
+        <table>
+            <tr><th>〇</th><td>{{ form.score_circle }}</td></tr>
+            <tr><th>△</th><td>{{ form.score_triangle }}</td></tr>
+            <tr><th>-</th><td>{{ form.score_hyphen }}</td></tr>
+            <tr><th>×</th><td>{{ form.score_cross }}</td></tr>
+        </table>
+
+        <h2>2. 配当政策加点</h2>
+        <table>
+            <tr><th>〇</th><td>{{ form.div_circle }}</td></tr>
+            <tr><th>△</th><td>{{ form.div_triangle }}</td></tr>
+        </table>
+
+        <h2>3. 判定セルの色分け閾値</h2>
+        <table>
+            <tr><th><span class="badge-high">高評価</span>（以上）</th><td>{{ form.threshold_high }}</td></tr>
+            <tr><th><span class="badge-mid">中評価</span>（以上）</th><td>{{ form.threshold_mid }}</td></tr>
+            <tr><th><span class="badge-low">基準内</span>（以上）</th><td>{{ form.threshold_low }}</td></tr>
+        </table>
+
+        <div class="actions">
+            <button type="submit" class="btn-primary">保存して全銘柄を再計算</button>
+            <a href="{% url 'stock_list' %}" class="btn-secondary">一覧へ戻る</a>
+        </div>
+    </form>
+</body>
+</html>
