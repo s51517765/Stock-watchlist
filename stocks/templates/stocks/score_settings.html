@@ -59,10 +59,35 @@
             <tr><th><span class="badge-low">基準内</span>（以上）</th><td>{{ form.threshold_low }}</td></tr>
         </table>
 
+        <h2>4. BB色分け閾値</h2>
+        <table>
+            <tr><th>水準</th><th>基準値</th><th>背景色</th><th>文字色</th></tr>
+            <tr><th>強売（以上）</th><td>{{ form.sigma_pos_2_threshold }}<td>{{ form.sigma_pos_2_bg }}</td><td>{{ form.sigma_pos_2_fg }}</td></tr>
+            <tr><th>弱売（以上）</th><td>{{ form.sigma_pos_15_threshold }}<td>{{ form.sigma_pos_15_bg }}</td><td>{{ form.sigma_pos_15_fg }}</td></tr>
+            <tr><th>弱買（以下）</th><td>{{ form.sigma_neg_15_threshold }}<td>{{ form.sigma_neg_15_bg }}</td><td>{{ form.sigma_neg_15_fg }}</td></tr>
+            <tr><th>強買（以下）</th><td>{{ form.sigma_neg_2_threshold }}<td>{{ form.sigma_neg_2_bg }}</td><td>{{ form.sigma_neg_2_fg }}</td></tr>
+            <tr><th>デフォルト</th><td>-<td>{{ form.sigma_other_bg }}</td><td>{{ form.sigma_other_fg }}</td></tr>
+        </table>
+
         <div class="actions">
             <button type="submit" class="btn-primary">保存して全銘柄を再計算</button>
             <a href="{% url 'stock_list' %}" class="btn-secondary">一覧へ戻る</a>
         </div>
     </form>
+
+    {% if form.errors %}    
+    <div style="background: #ffebee; border: 1px solid #ef9a9a; color: #c62828; padding: 10px; border-radius: 4px; margin-top: 16px; margin-bottom: 16px;">
+        <strong>入力エラーがあり保存できませんでした：</strong>
+        {{ form.non_field_errors }}
+        <ul>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
 </body>
 </html>

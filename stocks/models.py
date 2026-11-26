@@ -178,3 +178,37 @@ class ScoreSetting(models.Model):
             "〇増配": self.div_circle,
             "△非減配": self.div_triangle,
         }
+
+    # σ値 閾値設定
+    sigma_pos_2_threshold = models.FloatField("σ上限強（以上）", default=2.0)
+    sigma_pos_15_threshold = models.FloatField("σ上限弱（以上）", default=1.5)
+    sigma_neg_15_threshold = models.FloatField("σ下限弱（以下）", default=-1.5)
+    sigma_neg_2_threshold = models.FloatField("σ下限強（以下）", default=-2.0)
+
+    # σ値 背景色・文字色設定
+    sigma_pos_2_bg = models.CharField("σ>=2 背景色", max_length=20, default="#32ff32")
+    sigma_pos_2_fg = models.CharField("σ>=2 文字色", max_length=20, default="#FFFFFF")
+
+    sigma_pos_15_bg = models.CharField(
+        "σ>=1.5 背景色", max_length=20, default="#cdfac9"
+    )
+    sigma_pos_15_fg = models.CharField(
+        "σ>=1.5 文字色", max_length=20, default="#001330"
+    )
+
+    sigma_neg_15_bg = models.CharField(
+        "σ<=-1.5 背景色", max_length=20, default="#f8a25b"
+    )
+    sigma_neg_15_fg = models.CharField(
+        "σ<=-1.5 文字色", max_length=20, default="#984c0c"
+    )
+
+    sigma_neg_2_bg = models.CharField("σ<=-2 背景色", max_length=20, default="#fd5521")
+    sigma_neg_2_fg = models.CharField("σ<=-2 文字色", max_length=20, default="#FFFFFF")
+
+    sigma_other_bg = models.CharField(
+        "σその他 背景色", max_length=20, default="#ffffff"
+    )
+    sigma_other_fg = models.CharField(
+        "σその他 文字色", max_length=20, default="#212529"
+    )

@@ -216,3 +216,22 @@ def get_score_css_class(score: int | None, setting: ScoreSetting | None = None) 
     if score >= setting.threshold_low:
         return "score-low"
     return "score-below"
+
+
+def get_sigma_inline_style(sigma, setting: ScoreSetting) -> str:
+    if sigma is None:
+        return f"background-color: {setting.sigma_other_bg} !important; color: {setting.sigma_other_fg} !important;"
+
+    val = float(sigma)
+    if val >= setting.sigma_pos_2_threshold:
+        bg, fg, bold = setting.sigma_pos_2_bg, setting.sigma_pos_2_fg, ""
+    elif val >= setting.sigma_pos_15_threshold:
+        bg, fg, bold = setting.sigma_pos_15_bg, setting.sigma_pos_15_fg, ""
+    elif val <= setting.sigma_neg_2_threshold:
+        bg, fg, bold = setting.sigma_neg_2_bg, setting.sigma_neg_2_fg, ""
+    elif val <= setting.sigma_neg_15_threshold:
+        bg, fg, bold = setting.sigma_neg_15_bg, setting.sigma_neg_15_fg, ""
+    else:
+        bg, fg, bold = setting.sigma_other_bg, setting.sigma_other_fg, ""
+
+    return f"background-color: {bg} !important; color: {fg} !important; {bold}"

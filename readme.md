@@ -61,7 +61,7 @@ $ python manage.py migrate
 ### 起動
 $ cd ~/stock_app/
 $ source venv/bin/activate
-$ cd ~/stock_app/stock_rspi
+$ cd ~/stock_app
 　必要な場合
 $ python manage.py makemigrations
 $ python manage.py migrate

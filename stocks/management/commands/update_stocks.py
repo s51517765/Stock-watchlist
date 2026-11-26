@@ -2,8 +2,8 @@ import time
 from django.core.management.base import BaseCommand
 from django.db import close_old_connections
 from django.utils import timezone
-from stocks.models import Stock
-from stocks.utils import refresh_stock_data
+from stocks.models import Stock, ScoreSetting
+from stocks.utils import refresh_stock_data, calculate_stock_score
 
 # 必要に応じて「YYYY-MM-DD」形式で追加・更新する祝日リスト
 HOLIDAYS = {
@@ -94,9 +94,11 @@ class Command(BaseCommand):
 
         stocks = list(Stock.objects.all().order_by("code"))
         total = len(stocks)
+        setting = ScoreSetting.get_solo()
 
         ok_cnt = 0
-        failed_stocks = []  # 失敗した Stock を保持
+        failed_stocks = []    # 失敗した Stock を保持
+        updated_stocks = []   # 更新・再計算できた Stock を保持
 
         mode_label = (
             "（--force 強制実行）" if force and (is_weekend or is_holiday) else ""
@@ -109,8 +111,12 @@ class Command(BaseCommand):
             try:
                 close_old_connections()
                 if refresh_stock_data(stock, history_limit=history_limit):
+                    stock.evaluation_score = calculate_stock_score(stock, setting)
+                    updated_stocks.append(stock)
                     ok_cnt += 1
-                    self.stdout.write(f"[{idx}/{total}] {stock.code} {stock.name}: OK")
+                    self.stdout.write(
+                        f"[{idx}/{total}] {stock.code} {stock.name}: OK (score={stock.evaluation_score})"
+                    )
                 else:
                     failed_stocks.append(stock)
                     self.stdout.write(
@@ -146,10 +152,12 @@ class Command(BaseCommand):
                 try:
                     close_old_connections()
                     if refresh_stock_data(stock, history_limit=history_limit):
+                        stock.evaluation_score = calculate_stock_score(stock, setting)
+                        updated_stocks.append(stock)
                         ok_cnt += 1
                         self.stdout.write(
                             self.style.SUCCESS(
-                                f"  [リトライ成功] {stock.code} {stock.name}: OK"
+                                f"  [リトライ成功] {stock.code} {stock.name}: OK (score={stock.evaluation_score})"
                             )
                         )
                     else:
@@ -172,7 +180,13 @@ class Command(BaseCommand):
 
             failed_stocks = next_failed
 
-        # 3. 最終結果
+        # 3. 更新された銘柄の評価スコアを一括保存
+        if updated_stocks:
+            close_old_connections()
+            Stock.objects.bulk_update(updated_stocks, ["evaluation_score"])
+            self.stdout.write(f"評価スコア保存完了: {len(updated_stocks)} 件")
+
+        # 4. 最終結果
         final_ng = len(failed_stocks)
         if final_ng == 0:
             self.stdout.write(

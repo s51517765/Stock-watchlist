@@ -9,6 +9,7 @@ from .utils import (
     refresh_stock_data,
     calculate_stock_score,
     get_score_css_class,
+    get_sigma_inline_style,
 )
 from .forms import ScoreSettingForm
 
@@ -19,7 +20,6 @@ def stock_list(request):
     sort_key = request.GET.get("sort", "code")
     order = request.GET.get("order", "asc")  # デフォルトは昇順
 
-    # ソート項目と順序に応じたクエリの構築
     if sort_key == "code":
         field = "code"
     elif sort_key == "yield":
@@ -27,37 +27,31 @@ def stock_list(request):
     elif sort_key == "bb":
         field = "bollinger_band_position"
     else:
+        sort_key = "code"
         field = "code"
 
-    # 降順の場合はフィールドの頭にマイナスを付ける
-    if order == "desc":
-        field = f"-{field}"
+    order_field = f"-{field}" if order == "desc" else field
 
-    stocks = Stock.objects.all().order_by(field, "code")
+    # ソート済みのクエリセットをリスト化し、そのまま score_class を付与する
+    stocks = list(Stock.objects.all().order_by(order_field, "code"))
 
-    # テンプレートへ渡すための「次に反転させたときの順序」を計算しておく
+    setting = ScoreSetting.get_solo()
+    for stock in stocks:
+        stock.score_class = get_score_css_class(stock.evaluation_score, setting)
+        stock.sigma_style = get_sigma_inline_style(
+            stock.bollinger_band_position, setting
+        )
+
     next_order = "desc" if order == "asc" else "asc"
 
     context = {
         "stocks": stocks,
+        "setting": setting,
         "current_sort": sort_key,
         "current_order": order,
         "next_order": next_order,
     }
-
-    setting = ScoreSetting.get_solo()
-    stocks = list(Stock.objects.all())
-
-    for stock in stocks:
-        stock.score_class = get_score_css_class(stock.evaluation_score, setting)
-    return render(
-        request,
-        "stocks/stock_list.html",
-        {
-            "stocks": stocks,
-            "setting": setting,
-        },
-    )
+    return render(request, "stocks/stock_list.html", context)
 
 
 @login_required

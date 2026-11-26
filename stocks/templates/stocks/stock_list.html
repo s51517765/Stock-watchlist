@@ -39,7 +39,7 @@
 <body>
 
 <header>
-    <span>[≡] 株価監視ツール</span>
+    <span>株価監視ツール</span>
     <form action="{% url 'logout' %}" method="post" style="margin: 0;">
         {% csrf_token %}
         <button type="submit" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 14px; text-decoration: underline; padding: 0;">ログアウト</button>
@@ -107,7 +107,7 @@
                 <td>{{ stock.position }}</td>
                 <td class="{{ stock.score_class }}">{{ stock.judgement }}</td> <!-- ファンダ 旧判定 -->
                 <td>{{ stock.current_price|default:"-" }}</td> <!-- 現在価格 -->
-                <td>{{ stock.bollinger_band_position|default:"-" }}</td> <!-- ボリンジャーバンド位置 -->
+                <td style="{{ stock.sigma_style }}">{{ stock.bollinger_band_position|default:"-" }}</td> <!-- ボリンジャーバンド位置 -->
                 <td>{{ stock.bollinger_band_sigma|default:"-" }}</td> <!-- σ値 -->
                 <td>{{ stock.dividend_yield|default:"-" }}</td> <!-- 利回り-->
                 <td>{{ stock.consecutive_dividend_increases|default:"-" }}</td> <!-- 連続増配 -->
@@ -147,7 +147,7 @@
         selectedStockCode = code;
         
         document.getElementById('selectedCodeText').innerText = '選択中: ' + code;
-        document.getElementById('yahooLink').href = 'https://finance.yahoo.co.jp/quote/' + code;
+        document.getElementById('yahooLink').href = 'https://finance.yahoo.co.jp/quote/' + code+'/dividend';
         document.getElementById('ManexLink').href = 'https://monex.ifis.co.jp/index.php?sa=report_dps&bcode=' + code;
         document.getElementById('actionBar').classList.add('active');
     }
