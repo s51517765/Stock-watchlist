@@ -47,34 +47,55 @@
             <input type="text" id="name" name="name" value="{{ stock.name|default:'' }}" placeholder="例: トヨタ自動車">
         </div>
 
-
-<div class="form-group">
-    <label>ポジション</label>
-    <div class="checkbox-group">
-        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
-            <input type="checkbox" name="position" value="NISA" {% if "NISA" in stock.position %}checked{% endif %}>
-            <span>NISA</span>
-        </label>
-        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
-            <input type="checkbox" name="position" value="松井" {% if "松井" in stock.position %}checked{% endif %}>
-            <span>松井</span>
-        </label>
-        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
-            <input type="checkbox" name="position" value="SBI" {% if "SBI" in stock.position %}checked{% endif %}>
-            <span>SBI</span>
-        </label>
-        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
-            <input type="checkbox" name="position" value="マネックス" {% if "マネックス" in stock.position %}checked{% endif %}>
-            <span>マネックス</span>
-        </label>
-        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
-            <input type="checkbox" name="position" value="その他" {% if "その他" in stock.position %}checked{% endif %}>
-            <span>その他</span>
-        </label>
-    </div>
-</div>
-
-
+        <div class="form-group">
+            <label>ポジション</label>
+            <div class="checkbox-group">
+                <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+                    <input type="checkbox" name="position" value="NISA" {% if "NISA" in stock.position %}checked{% endif %}>
+                    <span>NISA</span>
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+                    <input type="checkbox" name="position" value="松井" {% if "松井" in stock.position %}checked{% endif %}>
+                    <span>松井</span>
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+                    <input type="checkbox" name="position" value="SBI" {% if "SBI" in stock.position %}checked{% endif %}>
+                    <span>SBI</span>
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+                    <input type="checkbox" name="position" value="マネックス" {% if "マネックス" in stock.position %}checked{% endif %}>
+                    <span>マネックス</span>
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+                    <input type="checkbox" name="position" value="その他" {% if "その他" in stock.position %}checked{% endif %}>
+                    <span>その他</span>
+                </label>
+            </div>
+            <div class="hold">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="position_nisa">NISA</label>
+                        <input type="number" step="1" id="position_nisa" name="position_nisa" value="{{ stock.position_nisa|default:'' }}" placeholder="例: 100">
+                    </div>
+                    <div class="form-group">
+                        <label for="position_matsui">松井</label>
+                        <input type="number" step="1" id="position_matsui" name="position_matsui" value="{{ stock.position_matsui|default:'' }}" placeholder="例: 0">
+                    </div>
+                    <div class="form-group">
+                        <label for="position_sbi">SBI</label>
+                        <input type="number" step="1" id="position_sbi" name="position_sbi" value="{{ stock.position_sbi|default:'' }}" placeholder="例: 0">
+                    </div>
+                    <div class="form-group">
+                        <label for="position_monex">マネックス</label>
+                        <input type="number" step="1" id="position_monex" name="position_monex" value="{{ stock.position_monex|default:'' }}" placeholder="例: 0">
+                    </div>
+                    <div class="form-group">
+                        <label for="position_other">その他</label>                    
+                        <input type="number" step="1" id="position_other" name="position_other" value="{{ stock.position_other|default:'' }}" placeholder="例: 0">
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="form-row">
             <div class="form-group">
@@ -83,13 +104,12 @@
             </div>
             <div class="form-group">
                 <label for="target_price">目標株価 (円)</label>
-                <input type="number" step="0.01" id="target_price" name="target_price" value="{{ stock.target_price|default:'' }}" placeholder="例: 2000">
+                <input type="number" step="1" id="target_price" name="target_price" value="{{ stock.target_price|default:'' }}" placeholder="例: 2000">
             </div>
         </div>
 
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-        <!-- 追加した定性項目群 -->
         <!-- 定性項目群 -->
         <div class="form-row">
             <div class="form-group">

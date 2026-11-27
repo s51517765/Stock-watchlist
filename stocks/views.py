@@ -10,6 +10,7 @@ from .utils import (
     calculate_stock_score,
     get_score_css_class,
     get_sigma_inline_style,
+    calculate_expected_dividend,
 )
 from .forms import ScoreSettingForm
 
@@ -87,12 +88,27 @@ def stock_create(request, key_id=None):
         selected_positions = request.POST.getlist("position")
         position = "/".join(selected_positions) if selected_positions else "-"
 
+        # 見込み配当の計算
+        dividend_amount_raw = request.POST.get("dividend_amount")
+        dividend_amount = float(dividend_amount_raw) if dividend_amount_raw else None
+        nisa, tokutei = _get_total_shares_from_post(request.POST)
+        expected_dividend = calculate_expected_dividend(nisa, tokutei, dividend_amount)
+
         stock, created = Stock.objects.update_or_create(
             code=code,
             defaults={
                 "name": name,
+                "dividend_amount": dividend_amount,
                 "position": position,
-                "dividend_amount": request.POST.get("dividend_amount") or None,
+                "position_nisa": _parse_int(request.POST.get("position_nisa")) or None,
+                "position_matsui": _parse_int(request.POST.get("position_matsui"))
+                or None,
+                "position_sbi": _parse_int(request.POST.get("position_sbi")) or None,
+                "position_monex": _parse_int(request.POST.get("position_monex"))
+                or None,
+                "position_other": _parse_int(request.POST.get("position_other"))
+                or None,
+                "expected_dividend": expected_dividend,
                 "target_price": request.POST.get("target_price") or None,
                 "consecutive_dividend_increases": request.POST.get(
                     "consecutive_dividend_increases", "-"
@@ -142,10 +158,17 @@ def stock_edit(request, code):
     if request.method == "POST":
         stock.name = request.POST.get("name", "").strip()
         selected_positions_post = request.POST.getlist("position")
+
+        # ポジション
         stock.position = (
             "/".join(selected_positions_post) if selected_positions_post else "-"
         )
-        stock.dividend_amount = request.POST.get("dividend_amount") or None
+
+        # ファンダ、配当
+        dividend_amount_raw = request.POST.get("dividend_amount")
+        stock.dividend_amount = (
+            float(dividend_amount_raw) if dividend_amount_raw else None
+        )
         stock.target_price = request.POST.get("target_price") or None
 
         stock.consecutive_dividend_increases = request.POST.get(
@@ -156,6 +179,24 @@ def stock_edit(request, code):
 
         payout_ratio = request.POST.get("dividend_payout_ratio")
         stock.dividend_payout_ratio = int(payout_ratio) if payout_ratio else None
+
+        # 配当見込み
+
+        stock.position_nisa = _parse_int(request.POST.get("position_nisa")) or None
+        stock.position_matsui = _parse_int(request.POST.get("position_matsui")) or None
+        stock.position_sbi = _parse_int(request.POST.get("position_sbi")) or None
+        stock.position_monex = _parse_int(request.POST.get("position_monex")) or None
+        stock.position_other = _parse_int(request.POST.get("position_other")) or None
+
+        tokutei = (
+            (stock.position_matsui or 0)
+            + (stock.position_sbi or 0)
+            + (stock.position_monex or 0)
+            + (stock.position_other or 0)
+        )
+        stock.expected_dividend = calculate_expected_dividend(
+            (stock.position_nisa or 0), tokutei, stock.dividend_amount
+        )
 
         # 権利月の更新
         kenri_list = request.POST.getlist("kenri_tsuki")
@@ -222,3 +263,25 @@ def score_settings(request):
     return render(
         request, "stocks/score_settings.html", {"form": form, "setting": setting}
     )
+
+
+def _parse_int(value: str | None) -> int:
+    if not value:
+        return 0
+    try:
+        return int(value)
+    except ValueError:
+        return 0
+
+
+def _get_total_shares_from_post(post_data) -> int:
+    fields = [
+        "position_matsui",
+        "position_sbi",
+        "position_monex",
+        "position_other",
+    ]
+
+    tokutei = sum(_parse_int(post_data.get(name)) for name in fields)
+    nisa = _parse_int(post_data.get("position_nisa"))
+    return nisa, tokutei

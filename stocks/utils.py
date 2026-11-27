@@ -1,7 +1,7 @@
 import datetime
 import requests
 from .models import PriceHistory, ScoreSetting
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_DOWN
 
 
 def fetch_yahoo_chart(symbol):
@@ -200,7 +200,7 @@ def calculate_stock_score(stock, setting: ScoreSetting | None = None) -> int | N
 
     # 利回り^2 * 連続増配 * 業績推移 * max(100 - 配当性向, 0) + 配当政策
     raw_score = (yld**2) * c_div * perf * payout_factor + policy
-    return int(raw_score.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    return int(raw_score.quantize(Decimal("1"), rounding=ROUND_HALF_DOWN))
 
 
 def get_score_css_class(score: int | None, setting: ScoreSetting | None = None) -> str:
@@ -235,3 +235,22 @@ def get_sigma_inline_style(sigma, setting: ScoreSetting) -> str:
         bg, fg, bold = setting.sigma_other_bg, setting.sigma_other_fg, ""
 
     return f"background-color: {bg} !important; color: {fg} !important; {bold}"
+
+
+# 見込み配当（円）を算出する（特定口座は20％税引き後）
+def calculate_expected_dividend(
+    nisa: int | None, tokutei: int | None, dividend_per_share
+) -> int | None:
+
+    if nisa + tokutei == 0 or dividend_per_share in (None, ""):
+        return None
+
+    try:
+        nisa_qty = Decimal(str(nisa))
+        tokutei_qty = Decimal(str(tokutei))
+        dps = Decimal(str(dividend_per_share))
+    except Exception:
+        return 0
+    net_rate = (100 - 20.315) / 100
+    total = nisa_qty * dps + tokutei_qty * dps * Decimal(net_rate)
+    return int(total.quantize(Decimal("1"), rounding=ROUND_HALF_DOWN))

@@ -52,9 +52,6 @@ class Stock(models.Model):
         max_length=5, default="-", verbose_name="業績推移(〇/△/×/-)"
     )
     dividend_policy = models.CharField(
-        max_length=10, default="-", verbose_name="配当政策"
-    )
-    dividend_policy = models.CharField(
         max_length=10,
         default="-",
         verbose_name="配当政策(〇増配/△非減配/-)",
@@ -92,6 +89,19 @@ class Stock(models.Model):
     )
     evaluation_score = models.IntegerField(
         null=True, blank=True, verbose_name="評価指数"
+    )
+
+    # ポジション
+    position_nisa = models.IntegerField(null=True, blank=True, verbose_name="NISA")
+    position_matsui = models.IntegerField(null=True, blank=True, verbose_name="松井")
+    position_sbi = models.IntegerField(null=True, blank=True, verbose_name="SBI")
+    position_monex = models.IntegerField(
+        null=True, blank=True, verbose_name="マネックス"
+    )
+    position_other = models.IntegerField(null=True, blank=True, verbose_name="その他")
+
+    expected_dividend = models.IntegerField(
+        null=True, blank=True, verbose_name="見込み配当"
     )
 
     updated_at = models.DateTimeField(auto_now=False, verbose_name="更新日")

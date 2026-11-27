@@ -1,3 +1,4 @@
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -94,6 +95,7 @@
                 <th>目標株価</th>
                 <th>評価指数</th>
                 <th>優待</th>
+                <th>見込み配当</th>
                 <th>権利月</th>
                 <th>メモ</th>
                 <th>更新日</th>
@@ -106,7 +108,7 @@
                 <td>{{ stock.name }}</td>
                 <td>{{ stock.position }}</td>
                 <td class="{{ stock.score_class }}">{{ stock.judgement }}</td> <!-- ファンダ 旧判定 -->
-                <td>{{ stock.current_price|default:"-" }}</td> <!-- 現在価格 -->
+                <td>{{ stock.current_price|intcomma|default:"-" }}</td> <!-- 現在価格 -->
                 <td style="{{ stock.sigma_style }}">{{ stock.bollinger_band_position|default:"-" }}</td> <!-- ボリンジャーバンド位置 -->
                 <td>{{ stock.bollinger_band_sigma|default:"-" }}</td> <!-- σ値 -->
                 <td>{{ stock.dividend_yield|default:"-" }}</td> <!-- 利回り-->
@@ -114,10 +116,11 @@
                 <td>{{ stock.business_performance|default:"-" }}</td> <!-- 業績推移 -->
                 <td>{{ stock.dividend_payout_ratio|default:"-" }}</td> <!-- 配当性向 -->
                 <td>{{ stock.dividend_policy|default:"-" }}</td> <!-- 配当政策 -->
-                <td>{{ stock.dividend_amount|default:"-" }}</td> <!-- 配当金額 -->
+                <td>{{ stock.dividend_amount|default:"-" }}</td> <!-- 1株配当金額 -->
                 <td>{{ stock.target_price|default:"-" }}</td> <!-- 目標価格 -->
                 <td class="{{ stock.score_class }}">{{ stock.evaluation_score|default:"-" }}</td> <!-- （ファンダメンタルズ）評価値 -->
                 <td>{{ stock.yuutai|default:"-" }}</td> <!-- 優待 -->
+                <td>{% if stock.expected_dividend is not None %}{{ stock.expected_dividend|intcomma }}{% else %}-{% endif %}</td> <!-- 見込み配当 -->
                 <td>{{ stock.kenri_tsuki|default:"-" }}</td> <!-- 権利月 -->
                 <td>{{ stock.memo|default:"-" }}</td> <!-- メモ -->
                 <td>{{ stock.updated_at|date:"Y/m/d H:i" }}</td>
